@@ -1,10 +1,16 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { ArrowUpRight } from 'lucide-react';
+
+const HeroParticles = dynamic(
+  () => import('@/components/ui/HeroParticles').then((m) => m.HeroParticles),
+  { ssr: false },
+);
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -79,12 +85,18 @@ const TICKER = [
 
 export default function Home() {
   return (
-    <main className="overflow-x-hidden bg-[#0a0a0a] text-white">
+    <>
+      {/* ── Fixed 3D particle field — renders behind all page content ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <HeroParticles />
+      </div>
+
+      <main className="relative z-10 overflow-x-hidden text-white">
 
       {/* ════════════════════════════════════════════════════════════
           HERO — 100vh
       ════════════════════════════════════════════════════════════ */}
-      <section className="relative flex min-h-screen flex-col overflow-hidden bg-[#0a0a0a]">
+      <section className="relative flex min-h-screen flex-col overflow-hidden">
 
         {/* Top rule */}
         <motion.div
@@ -189,6 +201,9 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {/* Gradient fade — particles dissolve into the solid sections below */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-b from-transparent via-[#0a0a0a]/75 to-[#0a0a0a]" />
       </section>
 
       {/* ════════════════════════════════════════════════════════════
@@ -391,6 +406,7 @@ export default function Home() {
         </div>
       </footer>
 
-    </main>
+      </main>
+    </>
   );
 }

@@ -1,19 +1,25 @@
 /** Inline error banner — used by /dashboard when the API is unreachable */
 export function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="mx-auto max-w-7xl px-8 py-16 flex flex-col items-center gap-4 text-center md:px-14">
-      <div className="flex h-12 w-12 items-center justify-center border border-red-500/30">
-        <span className="font-mono text-lg text-red-400">!</span>
-      </div>
+    <div className="mx-auto max-w-7xl px-8 py-20 flex flex-col items-center gap-6 text-center md:px-14">
+      {/* Pulsing indicator */}
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3831] opacity-60" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF3831]" />
+      </span>
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-red-400">
-          API Connection Error
+        <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.5em] text-white/25">
+          System Status · Data Pipeline
         </p>
-        <p className="mt-2 font-mono text-[11px] text-white/25 max-w-sm">{message}</p>
-        <p className="mt-1.5 font-mono text-[10px] text-white/15">
+        <p className="font-serif text-2xl font-black text-white">
+          AWAITING BACKEND CONNECTION
+        </p>
+        <p className="mt-3 font-mono text-[10px] leading-relaxed text-white/30 max-w-sm mx-auto">
+          The SPECTRAVEIN intelligence pipeline is unreachable.
           Ensure the FastAPI server is running on{' '}
-          <span className="text-white/30">http://localhost:8000</span>
+          <span className="text-white/50">http://localhost:8000</span>
         </p>
+        <p className="mt-2 font-mono text-[9px] text-white/20">ERR: {message}</p>
       </div>
     </div>
   );

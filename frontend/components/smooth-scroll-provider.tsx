@@ -7,20 +7,23 @@
  */
 
 import { ReactLenis } from 'lenis/react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
   return (
     <ReactLenis
       root
       options={{
-        lerp: 0.08,          // interpolation factor — lower = smoother / slower
-        duration: 1.4,       // scroll duration in seconds
+        lerp: 0.08,
+        duration: 1.4,
         smoothWheel: true,
         wheelMultiplier: 1,
         touchMultiplier: 1.5,
       }}
     >
-      {children}
+      <TooltipProvider delayDuration={200}>
+        {children}
+      </TooltipProvider>
     </ReactLenis>
   );
 }

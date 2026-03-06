@@ -27,6 +27,22 @@ export interface Asteroid {
   /** Estimated mass in kg */
   estimated_mass_kg: number;
   composition: CompositionEntry[];
+  /** Total mission CapEx in USD (base + inclination + distance penalties) */
+  mission_cost_usd: number;
+  /** Net profit in USD = adjusted_value_usd − mission_cost_usd (can be negative) */
+  net_profit_usd: number;
+  /** Estimated CO2 equivalent (tons) avoided vs Earth-based terrestrial mining */
+  earth_co2_offset_tons: number;
+  /** Semi-major axis in AU — needed for orbital orrery geometry */
+  semi_major_axis_au: number;
+  /** Orbital eccentricity (0 = circular, 1 = parabolic) */
+  eccentricity: number;
+  /** Predicted optimal launch window, e.g. "OCT 2028" */
+  next_pass_date: string;
+  /** Plain-English AI-generated mission briefing */
+  xai_summary: string;
+  /** Potentially Hazardous Asteroid flag from JPL dataset */
+  pha: boolean;
 }
 
 export function getClassColors(cls: AsteroidClass) {

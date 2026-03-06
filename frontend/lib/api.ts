@@ -20,6 +20,14 @@ export interface ApiTarget {
   estimated_mass_kg: number;
   estimated_value_usd: number;
   adjusted_value_usd: number;
+  mission_cost_usd: number;
+  net_profit_usd: number;
+  earth_co2_offset_tons: number;
+  semi_major_axis_au: number;
+  eccentricity: number;
+  next_pass_date: string;
+  xai_summary: string;
+  pha: boolean;
 }
 
 // ── Composition templates by spectral class ───────────────────────────────────
@@ -85,6 +93,14 @@ export function apiTargetToAsteroid(t: ApiTarget): Asteroid {
     adjusted_value_usd: t.adjusted_value_usd,
     estimated_mass_kg: t.estimated_mass_kg,
     composition: COMPOSITION_TEMPLATES[cls],
+    mission_cost_usd: t.mission_cost_usd,
+    net_profit_usd: t.net_profit_usd,
+    earth_co2_offset_tons: t.earth_co2_offset_tons,
+    semi_major_axis_au: t.semi_major_axis_au,
+    eccentricity: t.eccentricity,
+    next_pass_date: t.next_pass_date,
+    xai_summary: t.xai_summary,
+    pha: t.pha,
   };
 }
 

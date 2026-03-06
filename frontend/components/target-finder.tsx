@@ -2,11 +2,12 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useSpring, useMotionValue } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Asteroid, AsteroidClass, getClassColors } from '@/lib/data';
 import { formatUSDShort } from '@/lib/api';
+import { XaiTooltip } from '@/components/xai-tooltip';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -153,13 +154,26 @@ function AsteroidRow({ asteroid, rank, isSelected, onSelect, onPointerEnter, onP
 
       {/* Name + ID */}
       <div className="min-w-0 flex-1">
-        <motion.p
-          className="truncate text-sm font-bold leading-tight"
-          animate={{ color: col }}
-          transition={{ duration: 0.15 }}
-        >
-          {asteroid.full_name}
-        </motion.p>
+        <div className="flex items-center gap-2">
+          <motion.p
+            className="truncate text-sm font-bold leading-tight"
+            animate={{ color: col }}
+            transition={{ duration: 0.15 }}
+          >
+            {asteroid.full_name}
+          </motion.p>
+          {(asteroid.pha || asteroid.moid < 0.05) && (
+            <XaiTooltip
+              term={
+                <span className="flex items-center gap-0.5 rounded-sm px-1 py-0.5 font-mono text-[8px] font-black uppercase tracking-widest"
+                  style={{ backgroundColor: 'rgba(127,29,29,0.5)', color: '#FF3831' }}>
+                  <Lock className="h-2 w-2" />PHA
+                </span>
+              }
+              explanation="Potentially Hazardous Asteroid. Legally restricted from commercial mining to prevent accidental Earth-impact trajectory alterations."
+            />
+          )}
+        </div>
         <p className="font-mono text-[9px] text-white/20">
           JPL:{asteroid.id}
         </p>
@@ -354,10 +368,38 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
       <div className="flex items-center gap-4 border-b border-white/8 px-2 pb-3">
         <span className="w-9 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20">#</span>
         <span className="flex-1 font-mono text-[9px] uppercase tracking-widest text-white/20">Name</span>
-        <span className="hidden w-12 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20 sm:block">Class</span>
-        <span className="hidden w-20 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20 sm:block">Diam.</span>
-        <span className="hidden w-14 shrink-0 text-right font-mono text-[9px] uppercase tracking-widest text-white/20 md:block">Access.</span>
-        <span className="w-20 shrink-0 text-right font-mono text-[9px] uppercase tracking-widest text-white/20">Value</span>
+        <span className="hidden w-12 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20 sm:block">
+          <XaiTooltip
+            term="Classification"
+            explanation="The spectral taxonomy of the asteroid (C, S, or M). This dictates its primary resource composition: volatiles, silicates, or heavy metals."
+          >
+            Class
+          </XaiTooltip>
+        </span>
+        <span className="hidden w-20 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20 sm:block">
+          <XaiTooltip
+            term="Diameter"
+            explanation="The estimated physical size in kilometers. This is multiplied by the class density to calculate the total extractable mass."
+          >
+            Diam.
+          </XaiTooltip>
+        </span>
+        <span className="hidden w-14 shrink-0 text-right font-mono text-[9px] uppercase tracking-widest text-white/20 md:block">
+          <XaiTooltip
+            term="Accessibility"
+            explanation="A proprietary score (0-100) combining Earth distance and orbital tilt. Higher scores indicate highly cost-effective mining missions."
+          >
+            Access.
+          </XaiTooltip>
+        </span>
+        <span className="w-20 shrink-0 text-right font-mono text-[9px] uppercase tracking-widest text-white/20">
+          <XaiTooltip
+            term="Value"
+            explanation="The estimated gross market value, calculated using the asteroid's volume, predicted density, and current terrestrial commodity prices."
+          >
+            Value
+          </XaiTooltip>
+        </span>
       </div>
 
       {/* ── Rows ── */}
