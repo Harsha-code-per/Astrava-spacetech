@@ -45,7 +45,7 @@ SPECTRAVEIN is a clean separation of concerns across three tiers:
 │   GET /api/targets                                                 │
 │     → Ingest asteroid_labeled.csv  (802 NEOs)                      │
 │     → Derive: mass · gross value · market shock deflator           │
-│     → Derive: CapEx · Net Profit · ESG CO₂ offset                 │
+│     → Derive: CapEx · Net Profit · ESG CO₂ offset                  │
 │     → Generate: XAI summary · Next pass estimate                   │
 │     → Return: List[AsteroidTarget]  (Pydantic-validated JSON)      │
 │                                                                    │
