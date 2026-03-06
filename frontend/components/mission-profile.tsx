@@ -1,219 +1,310 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Layers, Globe, Compass, Activity, Zap } from 'lucide-react';
-import { Asteroid, formatValuation, getClassColors, getClassDescription } from '@/lib/data';
+import { TrendingDown, ExternalLink, Zap } from 'lucide-react';
+import { Asteroid, getClassColors, getClassDescription } from '@/lib/data';
+import { formatUSD } from '@/lib/api';
 import { CompositionChart } from './composition-chart';
+import { OrbitalDiagram } from './orbital-diagram';
 
-function StatRow({ label, value, unit }: { label: string; value: string; unit?: string }) {
+const ease = [0.16, 1, 0.3, 1] as const;
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatMass(kg: number): string {
+  if (kg >= 1e18) return `${(kg / 1e18).toFixed(2)} ×10¹⁸ kg`;
+  if (kg >= 1e15) return `${(kg / 1e15).toFixed(2)} ×10¹⁵ kg`;
+  if (kg >= 1e12) return `${(kg / 1e12).toFixed(2)} ×10¹² kg`;
+  if (kg >= 1e9)  return `${(kg / 1e9).toFixed(2)} ×10⁹ kg`;
+  return `${kg.toLocaleString()} kg`;
+}
+
+function scoreColor(s: number) {
+  return s >= 80 ? '#34d399' : s >= 60 ? '#fbbf24' : s >= 40 ? '#fb923c' : '#f87171';
+}
+function viabilityLabel(s: number) {
+  return s >= 80 ? 'PRIME TARGET' : s >= 60 ? 'VIABLE' : s >= 40 ? 'MODERATE' : 'HIGH Δ-V';
+}
+
+// Thin horizontal rule section divider
+function Divider() {
+  return <div className="h-px w-full bg-white/8" />;
+}
+
+// Section label
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-white/5 py-2 last:border-0">
-      <span className="text-xs uppercase tracking-wider text-zinc-600">{label}</span>
-      <span className="font-mono text-sm text-zinc-300">
-        {value}
-        {unit && <span className="ml-1 text-xs text-zinc-600">{unit}</span>}
-      </span>
-    </div>
+    <p className="mb-4 font-mono text-[9px] uppercase tracking-[0.35em] text-white/25">
+      {children}
+    </p>
   );
 }
 
-function AnimatedBar({ value, max, colorClass }: { value: number; max: number; colorClass: string }) {
+// Animated progress bar
+function AnimBar({
+  value,
+  max,
+  color,
+  delay = 0,
+}: {
+  value: number;
+  max: number;
+  color: string;
+  delay?: number;
+}) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+    <div className="h-px w-full bg-white/10">
       <motion.div
-        className={`h-full rounded-full ${colorClass}`}
+        className="h-full"
+        style={{ backgroundColor: color }}
         initial={{ width: 0 }}
         animate={{ width: `${pct}%` }}
-        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        transition={{ duration: 1.0, ease, delay }}
       />
     </div>
   );
 }
 
-function scoreColor(s: number) {
-  return s >= 80 ? 'text-emerald-400' : s >= 60 ? 'text-amber-400' : s >= 40 ? 'text-orange-400' : 'text-red-400';
-}
-function scoreBar(s: number) {
-  return s >= 80 ? 'bg-emerald-400' : s >= 60 ? 'bg-amber-400' : s >= 40 ? 'bg-orange-400' : 'bg-red-500';
-}
-function viabilityLabel(s: number) {
-  return s >= 80 ? 'PRIME TARGET' : s >= 60 ? 'VIABLE' : s >= 40 ? 'MODERATE' : 'HIGH DELTA-V';
-}
+// ── Main component ───────────────────────────────────────────────────────────
 
-/** Glassmorphic panel wrapper */
-function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-zinc-800/60 bg-black/50 p-5 backdrop-blur-md">
-      {children}
-    </div>
-  );
-}
-
-interface Props { asteroid: Asteroid; }
+interface Props { asteroid: Asteroid }
 
 export function MissionProfile({ asteroid }: Props) {
+  const [orbitalHovered, setOrbitalHovered] = useState(false);
+
   const c = getClassColors(asteroid.classification);
-  const { value: valNum, unit: valUnit } = formatValuation(asteroid.gross_valuation);
+  const { value: valNum, unit: valUnit } = formatUSD(asteroid.gross_valuation);
+  const { value: adjNum, unit: adjUnit } = formatUSD(asteroid.adjusted_value_usd);
+  const deflationPct = asteroid.gross_valuation > 0
+    ? (1 - asteroid.adjusted_value_usd / asteroid.gross_valuation) * 100
+    : 0;
+
+  const diam = asteroid.diameter >= 10
+    ? asteroid.diameter.toFixed(1)
+    : asteroid.diameter.toFixed(3);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div>
-        <p className="mb-1 font-mono text-xs uppercase tracking-widest text-cyan-500">— Mission Profile</p>
-        <div className="flex flex-wrap items-baseline gap-2">
-          <h3 className="text-xl font-black text-white">{asteroid.full_name}</h3>
-          <span className={`inline-flex items-center rounded border px-2.5 py-0.5 font-mono text-xs font-bold ${c.bg} ${c.text} ${c.border}`}>
+    <div className="flex flex-col gap-0 pb-12">
+
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <div className="pb-6">
+        <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.35em] text-white/25">
+          — Mission Profile
+        </p>
+        <h2 className="font-serif text-3xl font-black leading-tight text-white">
+          {asteroid.full_name}
+        </h2>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex items-center border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest ${c.bg} ${c.text} ${c.border}`}
+          >
             {asteroid.classification}-TYPE
           </span>
+          <span className="text-xs text-white/30">{getClassDescription(asteroid.classification)}</span>
         </div>
-        <p className="mt-0.5 text-xs text-zinc-500">{getClassDescription(asteroid.classification)}</p>
       </div>
 
-      {/* ── Panel A: Financials ── */}
-      <Panel>
-        <div className="mb-4 flex items-center gap-2 text-zinc-500">
-          <TrendingUp className="h-3.5 w-3.5 text-yellow-400" />
-          <span className="font-mono text-xs uppercase tracking-widest">Gross Valuation</span>
-        </div>
+      <Divider />
 
-        {/* Gold glowing ROI number */}
-        <div
-          className="font-mono text-5xl font-black leading-none tracking-tight text-yellow-400"
-          style={{ textShadow: '0 0 40px rgba(234,179,8,0.55), 0 0 80px rgba(234,179,8,0.2)' }}
+      {/* ── Gross Valuation ─────────────────────────────────────────── */}
+      <div className="py-8">
+        <SectionLabel>Gross Valuation</SectionLabel>
+
+        {/* Massive serif number */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease, delay: 0.05 }}
         >
-          ${valNum}
-        </div>
-        <div className="mt-1 font-mono text-sm uppercase tracking-widest text-zinc-600">{valUnit}</div>
-
-        <div className="mt-4 space-y-0">
-          <StatRow label="Classification" value={`${asteroid.classification}-Type`} />
-          <StatRow label="Diameter" value={asteroid.diameter >= 10 ? asteroid.diameter.toFixed(1) : asteroid.diameter.toFixed(3)} unit="km" />
-          <StatRow label="Albedo" value={asteroid.albedo.toFixed(3)} />
-          <StatRow label="Inclination" value={`${asteroid.inclination.toFixed(2)}°`} />
-          <StatRow label="MOID" value={asteroid.moid.toFixed(4)} unit="AU" />
-        </div>
-
-        {/* Viability strip */}
-        <div className="mt-4 rounded-lg border border-white/5 bg-white/5 p-3">
-          <div className="mb-2 flex justify-between">
-            <span className="text-xs uppercase tracking-wider text-zinc-500">Mining Viability</span>
-            <span className={`font-mono text-xs font-bold ${scoreColor(asteroid.accessibility_score)}`}>
-              {viabilityLabel(asteroid.accessibility_score)}
+          <div className="flex items-end gap-1 leading-none">
+            <span className="font-serif text-[clamp(3.5rem,7vw,5.5rem)] font-black leading-none text-white">
+              ${valNum}
             </span>
           </div>
-          <AnimatedBar value={asteroid.accessibility_score} max={100} colorClass={scoreBar(asteroid.accessibility_score)} />
-          <div className="mt-1 text-right font-mono text-xs text-zinc-700">{asteroid.accessibility_score}/100</div>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.3em] text-white/30">
+            {valUnit} USD
+          </p>
+        </motion.div>
+      </div>
+
+      <Divider />
+
+      {/* ── Post-Shock Valuation ─────────────────────────────────────── */}
+      <div className="py-8">
+        <div className="mb-4 flex items-center gap-2">
+          <TrendingDown className="h-3.5 w-3.5 text-orange-400" />
+          <SectionLabel>Post-Shock Valuation · Market Saturation Adjusted</SectionLabel>
         </div>
-      </Panel>
 
-      {/* ── Panel B: Composition ── */}
-      <Panel>
-        <div className="mb-3 flex items-center gap-2 text-zinc-500">
-          <Layers className="h-3.5 w-3.5 text-purple-400" />
-          <span className="font-mono text-xs uppercase tracking-widest">Resource Composition</span>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease, delay: 0.1 }}
+        >
+          <div className="flex items-end gap-3">
+            <span className="font-serif text-[clamp(2rem,5vw,3.5rem)] font-black leading-none text-orange-400">
+              ${adjNum}
+            </span>
+            <span
+              className="mb-1 font-mono text-lg font-bold text-orange-400/70"
+            >
+              −{deflationPct.toFixed(1)}%
+            </span>
+          </div>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.3em] text-orange-400/40">
+            {adjUnit} USD
+          </p>
+        </motion.div>
+
+        <p className="mt-4 font-mono text-[10px] leading-relaxed text-white/20">
+          Flooding commodity markets with {diam} km of material would collapse global prices.
+          Logarithmic deflator applied to model real extractable value.
+        </p>
+      </div>
+
+      <Divider />
+
+      {/* ── Key Stats ───────────────────────────────────────────────── */}
+      <div className="py-8">
+        <SectionLabel>Physical Parameters</SectionLabel>
+
+        <div className="space-y-5">
+          {[
+            { label: 'Est. Mass',       value: formatMass(asteroid.estimated_mass_kg) },
+            { label: 'Diameter',        value: `${diam} km` },
+            { label: 'Albedo',          value: asteroid.albedo.toFixed(3) },
+            { label: 'Inclination',     value: `${asteroid.inclination.toFixed(2)}°` },
+            { label: 'Earth MOID',      value: `${asteroid.moid.toFixed(4)} AU` },
+            { label: 'Classification',  value: `${asteroid.classification}-Type` },
+          ].map(({ label, value }, i) => (
+            <motion.div
+              key={label}
+              className="flex items-baseline justify-between border-b border-white/5 pb-3 last:border-0"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.45, ease, delay: 0.06 * i }}
+            >
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/25">{label}</span>
+              <span className="font-mono text-sm text-white/80">{value}</span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      <Divider />
+
+      {/* ── Mining Viability ────────────────────────────────────────── */}
+      <div className="py-8">
+        <SectionLabel>Mining Viability</SectionLabel>
+
+        <div className="flex items-baseline justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5 text-white/40" />
+            <span className="font-mono text-xs text-white/40">Accessibility Score</span>
+          </div>
+          <div className="text-right">
+            <span
+              className="font-serif text-4xl font-black leading-none"
+              style={{ color: scoreColor(asteroid.accessibility_score) }}
+            >
+              {asteroid.accessibility_score.toFixed(0)}
+            </span>
+            <span className="ml-1 font-mono text-xs text-white/25">/100</span>
+          </div>
         </div>
 
-        <CompositionChart composition={asteroid.composition} />
+        <div className="mt-4">
+          <AnimBar
+            value={asteroid.accessibility_score}
+            max={100}
+            color={scoreColor(asteroid.accessibility_score)}
+          />
+        </div>
 
-        <div className="mt-3 space-y-2">
-          {asteroid.composition.map((entry) => (
-            <div key={entry.label} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span className="text-xs text-zinc-400">{entry.label}</span>
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-widest" style={{ color: scoreColor(asteroid.accessibility_score) }}>
+          {viabilityLabel(asteroid.accessibility_score)}
+        </p>
+
+        {/* Orbital bars */}
+        <div className="mt-6 space-y-4">
+          {[
+            {
+              label: 'Diameter',
+              value: Math.log10(asteroid.diameter + 1),
+              max: Math.log10(231),
+              color: '#a1a1aa',
+              desc: diam + ' km',
+            },
+            {
+              label: 'Inclination',
+              value: asteroid.inclination,
+              max: 30,
+              color: asteroid.inclination < 5 ? '#34d399' : asteroid.inclination < 15 ? '#fbbf24' : '#f87171',
+              desc: asteroid.inclination.toFixed(2) + '°',
+            },
+            {
+              label: 'Earth MOID',
+              value: Math.max(0, 100 - (asteroid.moid / 0.5) * 100),
+              max: 100,
+              color: asteroid.moid < 0.05 ? '#34d399' : asteroid.moid < 0.25 ? '#22d3ee' : '#52525b',
+              desc: asteroid.moid.toFixed(4) + ' AU',
+            },
+          ].map(({ label, value, max, color, desc }, i) => (
+            <div key={label}>
+              <div className="mb-2 flex justify-between">
+                <span className="font-mono text-[9px] uppercase tracking-widest text-white/25">{label}</span>
+                <span className="font-mono text-[10px] text-white/50">{desc}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-1 w-14 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full" style={{ width: `${entry.value}%`, backgroundColor: entry.color }} />
-                </div>
-                <span className="w-8 text-right font-mono text-xs text-zinc-300">{entry.value}%</span>
-              </div>
+              <AnimBar value={value} max={max} color={color} delay={0.08 * i} />
             </div>
           ))}
         </div>
-      </Panel>
+      </div>
 
-      {/* ── Panel C: Orbital Physics ── */}
-      <Panel>
-        <div className="mb-4 flex items-center gap-2 text-zinc-500">
-          <Globe className="h-3.5 w-3.5 text-cyan-400" />
-          <span className="font-mono text-xs uppercase tracking-widest">Orbital Physics</span>
-        </div>
+      <Divider />
 
-        <div className="space-y-4">
-          {/* Diameter */}
-          <div>
-            <div className="mb-1.5 flex justify-between">
-              <span className="text-xs uppercase tracking-wider text-zinc-600">Diameter</span>
-              <span className="font-mono text-xs text-zinc-300">
-                {asteroid.diameter >= 10 ? asteroid.diameter.toFixed(1) : asteroid.diameter.toFixed(3)} km
-              </span>
-            </div>
-            <AnimatedBar value={Math.log10(asteroid.diameter + 1)} max={Math.log10(231)} colorClass="bg-blue-500" />
-            <p className="mt-1 text-[10px] text-zinc-700">
-              {asteroid.diameter < 1 ? 'Sub-km body' : asteroid.diameter < 10 ? 'Small body' : asteroid.diameter < 100 ? 'Medium body' : 'Major body'}
-            </p>
-          </div>
+      {/* ── Resource Composition ────────────────────────────────────── */}
+      <div className="py-8">
+        <SectionLabel>Resource Composition</SectionLabel>
+        <CompositionChart key={asteroid.id} composition={asteroid.composition} />
+      </div>
 
-          {/* Albedo */}
-          <div>
-            <div className="mb-1.5 flex justify-between">
-              <span className="text-xs uppercase tracking-wider text-zinc-600">Albedo</span>
-              <span className="font-mono text-xs text-zinc-300">{asteroid.albedo.toFixed(3)}</span>
-            </div>
-            <AnimatedBar value={asteroid.albedo * 100} max={40} colorClass="bg-yellow-400" />
-            <p className="mt-1 text-[10px] text-zinc-700">
-              {asteroid.albedo < 0.1 ? 'Very dark surface' : asteroid.albedo < 0.2 ? 'Dark surface' : asteroid.albedo < 0.3 ? 'Moderate reflectivity' : 'High reflectivity'}
-            </p>
-          </div>
+      <Divider />
 
-          {/* Inclination */}
-          <div>
-            <div className="mb-1.5 flex justify-between">
-              <span className="flex items-center gap-1 text-xs uppercase tracking-wider text-zinc-600">
-                <Compass className="h-3 w-3" /> Inclination
-              </span>
-              <span className="font-mono text-xs text-zinc-300">{asteroid.inclination.toFixed(2)}°</span>
-            </div>
-            <AnimatedBar
-              value={asteroid.inclination} max={30}
-              colorClass={asteroid.inclination < 5 ? 'bg-emerald-400' : asteroid.inclination < 15 ? 'bg-amber-400' : 'bg-red-500'}
-            />
-            <p className="mt-1 text-[10px] text-zinc-700">
-              {asteroid.inclination < 5 ? 'Low delta-v requirement' : asteroid.inclination < 15 ? 'Moderate delta-v' : 'High delta-v — costly intercept'}
-            </p>
-          </div>
+      {/* ── Orbital Telemetry ────────────────────────────────────────── */}
+      <div className="py-8">
+        <SectionLabel>Orbital Telemetry · Heliocentric Projection</SectionLabel>
 
-          {/* Earth MOID */}
-          <div>
-            <div className="mb-1.5 flex justify-between">
-              <span className="flex items-center gap-1 text-xs uppercase tracking-wider text-zinc-600">
-                <Activity className="h-3 w-3" /> Earth MOID
-              </span>
-              <span className="font-mono text-xs text-zinc-300">{asteroid.moid.toFixed(4)} AU</span>
-            </div>
-            <AnimatedBar
-              value={Math.max(0, 100 - (asteroid.moid / 0.5) * 100)} max={100}
-              colorClass={asteroid.moid < 0.05 ? 'bg-emerald-400' : asteroid.moid < 0.25 ? 'bg-cyan-400' : 'bg-zinc-600'}
-            />
-            <p className="mt-1 text-[10px] text-zinc-700">
-              {asteroid.moid < 0.05 ? 'Earth proximal — NEA' : asteroid.moid < 0.25 ? 'Near-Earth accessible' : 'Main belt — deep space mission'}
-            </p>
-          </div>
+        {/* OrbitalDiagram: grayscale by default, color on hover — matches brutalist aesthetic */}
+        <motion.div
+          className="overflow-hidden"
+          onHoverStart={() => setOrbitalHovered(true)}
+          onHoverEnd={() => setOrbitalHovered(false)}
+          animate={{ filter: orbitalHovered ? 'grayscale(0%) contrast(100%)' : 'grayscale(100%) contrast(120%)' }}
+          transition={{ duration: 0.5 }}
+          style={{ filter: 'grayscale(100%) contrast(120%)' }}
+        >
+          <OrbitalDiagram asteroid={asteroid} />
+        </motion.div>
 
-          {/* Accessibility score */}
-          <div className="rounded-lg border border-white/5 bg-white/5 p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="flex items-center gap-1 text-xs uppercase tracking-wider text-zinc-500">
-                <Zap className="h-3 w-3" /> Accessibility Score
-              </span>
-              <span className="font-mono text-xl font-black text-white">{asteroid.accessibility_score}</span>
-            </div>
-            <AnimatedBar value={asteroid.accessibility_score} max={100} colorClass={scoreBar(asteroid.accessibility_score)} />
-          </div>
-        </div>
-      </Panel>
+        <p className="mt-2 font-mono text-[9px] uppercase tracking-widest text-white/20">
+          Hover to reveal spectral data
+        </p>
+
+        {/* JPL external link */}
+        <a
+          href={`https://ssd.jpl.nasa.gov/tools/sbdb_asteroids.html?sstr=${encodeURIComponent(asteroid.id)}&ov=1`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex w-full items-center justify-between border-t border-white/8 pt-4 font-mono text-[10px] uppercase tracking-widest text-white/25 transition-colors hover:text-white"
+        >
+          <span>Open NASA JPL Small Body Database</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+
     </div>
   );
 }

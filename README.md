@@ -1,16 +1,218 @@
-# Asteroid Classification & Mining Potential Engine
-Built for the 24Hr Space Tech Hackathon
+# SPECTRAVEIN
 
-## 🚀 Overview
-An end-to-end mission control dashboard and machine learning pipeline designed to identify high-yield asteroid mining targets. We classify Near-Earth Objects (NEOs) using spectral data and calculate their economic viability by factoring in orbital mechanics (Delta-v accessibility) and resource composition.
+> **Orbital Mining Intelligence & Economic Feasibility Engine.**
 
-## ⚙️ Tech Stack
-* **Frontend:** Next.js, Tailwind CSS, Shadcn UI, Aceternity UI, Recharts
-* **Backend:** Python, FastAPI, Pandas
-* **Machine Learning:** Scikit-Learn (XGBoost/Random Forest classifier)
-* **Data Sources:** NASA JPL Small-Body Database, SMASS Spectral Data
+---
 
-## 🧠 Core Engine
-1. **Spectral Classifier:** Ingests asteroid reflectance data to predict taxonomic class (C, S, M).
-2. **Economic Valuation:** Estimates total metallic yield based on predicted composition and physical volume.
-3. **Accessibility Scoring:** Evaluates orbital elements to determine the fuel cost (Delta-v) required for extraction.
+## Overview
+
+SPECTRAVEIN is a full-stack deep-tech platform that transforms raw NASA/JPL spectral data into actionable financial intelligence for asteroid mining ventures. It classifies Near-Earth Objects using an unsupervised machine learning pipeline, scores each target's accessibility via real orbital mechanics, and outputs a market-saturation-adjusted ROI valuation — all visualized in a high-fidelity, real-time dashboard.
+
+Built during a 24-hour hackathon, SPECTRAVEIN ingests **802 labeled Near-Earth Asteroids** directly from the JPL Small-Body Database and processes them through a multi-stage economic engine to surface the highest-yield, lowest-risk extraction targets.
+
+---
+
+## Key Innovations
+
+- **Machine Learning Pipeline**  
+  Unsupervised K-Means clustering on raw albedo values assigns each NEO to one of three spectral families (C, S, or M class) — zero manual labeling required. Classification maps directly to resource composition profiles used throughout the economic model.
+
+- **Astrophysics-Driven Accessibility Engine**  
+  Mission cost is dominated by delta-v — the velocity change required to reach a target. SPECTRAVEIN derives a 0–100 Accessibility Score from two JPL orbital parameters: Earth MOID (Minimum Orbit Intersection Distance) and orbital inclination. Low-MOID, low-inclination objects score near 100 and represent the most economically viable intercept opportunities.
+
+- **Market Shock Deflator**  
+  A single asteroid can contain more platinum than humanity has extracted in all of history. Selling it wholesale would collapse commodity markets. SPECTRAVEIN applies a logarithmic penalty to all gross valuations:
+
+  ```
+  penalty = 0.1 + 0.9 / (1 + log₁₀(max(1, mass_kg / 10⁹)))
+  adjusted_value = gross_value × penalty
+  ```
+
+  Massive bodies (>10 km) suffer 70–90% discounts. Sub-tonne payloads are barely penalized. The result is a realistic, investable valuation figure.
+
+- **Live Orbital Telemetry**  
+  Each target renders a real-time SVG heliocentric orbital diagram derived from its actual JPL orbital elements (semi-major axis, eccentricity, inclination). An animated asteroid body traces the elliptical orbit, with MOID proximity indicators and Mars reference orbit overlaid. Deep links to the NASA JPL 3D WebGL orbit viewer are provided for every target.
+
+---
+
+## Tech Stack
+
+### Frontend
+| Technology | Role |
+|---|---|
+| **Next.js 16** (App Router) | Multi-page React framework, `template.tsx` page transitions |
+| **TypeScript** | End-to-end type safety across API adapter and components |
+| **Tailwind CSS v4** | Utility-first styling, custom griflan-black/red design tokens |
+| **Framer Motion v12** | Page transitions, staggered hero animations, scroll reveals |
+| **Recharts** | Animated donut charts for resource composition |
+| **Shadcn UI** | Headless `Input` and `Select` components |
+| **Lenis** | Buttery-smooth scroll provider |
+
+### Backend
+| Technology | Role |
+|---|---|
+| **FastAPI** | High-performance async REST API server |
+| **Pandas** | CSV ingestion, null filtering, vectorized column derivation |
+| **Scikit-Learn** | K-Means clustering for unsupervised spectral labeling |
+| **Pydantic v2** | Strict response model validation (`AsteroidTarget`) |
+| **Uvicorn** | ASGI production server |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    FRONTEND (Next.js)                │
+│                                                     │
+│  /          → Landing page, methodology, CTAs       │
+│  /dashboard → 802-NEO table + orbital telemetry     │
+│  /analytics → Deep financial dive (per-target)      │
+└──────────────────┬──────────────────────────────────┘
+                   │ fetch /api/targets
+┌──────────────────▼──────────────────────────────────┐
+│                  BACKEND (FastAPI)                  │
+│                                                     │
+│  GET /api/targets                                   │
+│    → Load asteroid_labeled.csv                      │
+│    → Compute mass, gross value, adjusted value      │
+│    → Return 802 AsteroidTarget records (JSON)       │
+└──────────────────┬──────────────────────────────────┘
+                   │ reads
+┌──────────────────▼──────────────────────────────────┐
+│            asteroid_labeled.csv (802 NEOs)          │
+│   Generated by generate_labels.py                  │
+│   K-Means(k=3) on albedo → C / S / M labels        │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## Quick Start
+
+### Prerequisites
+- **Node.js** ≥ 18
+- **Python** ≥ 3.10
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-org/astrava-spacetech.git
+cd astrava-spacetech
+```
+
+### 2. Start the Backend
+
+```bash
+cd backend
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Generate labeled dataset (only needed once)
+python generate_labels.py
+
+# Start the API server
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+API will be live at **http://localhost:8000**  
+Swagger docs: **http://localhost:8000/docs**
+
+### 3. Start the Frontend
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+App will be live at **http://localhost:3000**
+
+### 4. Production Build
+
+```bash
+cd frontend
+npm run build
+npm start
+```
+
+---
+
+## Project Structure
+
+```
+astrava-spacetech/
+├── backend/
+│   ├── main.py                 # FastAPI server + ROI engine
+│   ├── generate_labels.py      # K-Means spectral classifier (run once)
+│   ├── asteroid_labeled.csv    # 802 labeled NEOs (generated artifact)
+│   ├── requirements.txt
+│   └── .gitignore
+│
+└── frontend/
+    ├── app/
+    │   ├── page.tsx            # Landing page (hero + methodology + footer)
+    │   ├── dashboard/page.tsx  # Target Finder + Orbital Telemetry
+    │   ├── analytics/page.tsx  # Deep Financial Analysis (per-target)
+    │   ├── template.tsx        # Framer Motion page transitions
+    │   └── layout.tsx          # Global fonts, cursor, smooth scroll
+    ├── components/
+    │   ├── navbar.tsx           # Fixed global navigation
+    │   ├── target-finder.tsx    # Search, sort, paginated table
+    │   ├── mission-profile.tsx  # Sidebar: valuation + physics panels
+    │   ├── composition-chart.tsx # Recharts animated donut
+    │   ├── orbital-diagram.tsx  # SVG heliocentric orbit viewer
+    │   ├── loading-screen.tsx   # Full-screen intro animation
+    │   ├── custom-cursor.tsx    # Framer Motion cursor
+    │   └── smooth-scroll-provider.tsx # Lenis wrapper
+    └── lib/
+        ├── api.ts              # fetchTargets(), apiTargetToAsteroid(), formatUSD()
+        └── data.ts             # Asteroid types, getClassColors(), getClassDescription()
+```
+
+---
+
+## API Reference
+
+### `GET /api/targets`
+
+Returns all 802 labeled Near-Earth Asteroid mining targets, sorted by `estimated_value_usd` descending.
+
+**Response schema:**
+```json
+[
+  {
+    "id": "a0001036",
+    "full_name": "1036 Ganymed (1924 TD)",
+    "diameter_km": 37.675,
+    "albedo": 0.238,
+    "inclination": 26.6819,
+    "moid": 0.344956,
+    "spectral_class": "S",
+    "accessibility_score": 46.64,
+    "estimated_mass_kg": 1.53e+17,
+    "estimated_value_usd": 1.53e+18,
+    "adjusted_value_usd": 2.44e+17
+  }
+]
+```
+
+---
+
+## Data Sources
+
+- [NASA/JPL Small-Body Database](https://ssd.jpl.nasa.gov/tools/sbdb_query.html) — Orbital elements, physical parameters for all known asteroids
+- [JPL HORIZONS System](https://ssd.jpl.nasa.gov/horizons/) — High-precision ephemeris for mission planning
+
+---
+
+*All valuations are theoretical economic models for research and demonstration purposes only. SPECTRAVEIN does not constitute financial or mission planning advice.*
