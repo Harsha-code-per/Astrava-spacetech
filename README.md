@@ -1,5 +1,5 @@
 # Asteroid Classification & Mining Potential Engine
-**A Papercloudtech Project** | Built for the 24Hr Space Tech Hackathon
+Built for the 24Hr Space Tech Hackathon
 
 ## 🚀 Overview
 An end-to-end mission control dashboard and machine learning pipeline designed to identify high-yield asteroid mining targets. We classify Near-Earth Objects (NEOs) using spectral data and calculate their economic viability by factoring in orbital mechanics (Delta-v accessibility) and resource composition.
