@@ -106,10 +106,10 @@ export function apiTargetToAsteroid(t: ApiTarget): Asteroid {
 
 // ── Fetch function ─────────────────────────────────────────────────────────────
 
-const API_URL = 'http://localhost:8000/api/targets';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function fetchTargets(): Promise<Asteroid[]> {
-  const res = await fetch(API_URL, { cache: 'no-store' });
+  const res = await fetch(`${API_BASE_URL}/api/targets`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error(`API error ${res.status}: ${res.statusText}`);
   }

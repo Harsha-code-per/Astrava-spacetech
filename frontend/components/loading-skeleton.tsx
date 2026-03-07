@@ -17,7 +17,9 @@ export function ErrorBanner({ message }: { message: string }) {
         <p className="mt-3 font-mono text-[10px] leading-relaxed text-white/30 max-w-sm mx-auto">
           The SPECTRAVEIN intelligence pipeline is unreachable.
           Ensure the FastAPI server is running on{' '}
-          <span className="text-white/50">http://localhost:8000</span>
+          <span className="text-white/50">
+            {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}
+          </span>
         </p>
         <p className="mt-2 font-mono text-[9px] text-white/20">ERR: {message}</p>
       </div>
