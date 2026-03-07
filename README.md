@@ -54,7 +54,7 @@ SPECTRAVEIN is a clean three-tier system with strict separation of concerns:
 │   /dashboard     802-NEO sortable/searchable table with XAI column headers │
 │   /analytics     Per-target: financial model, orrery, orbital telemetry    │
 │                                                                            │
-│   Design:  Pitch-black (#0a0a0a) · Griflan Red (#FF3831) · Serif/Mono     │
+│   Design:  Pitch-black (#0a0a0a) · Griflan Red (#FF3831) · Serif/Mono      │
 │   3D:      Three.js / @react-three/fiber (Orrery + particle field)         │
 │   Motion:  Framer Motion v12 (page transitions + scroll reveals)           │
 └───────────────────┬─────────────────────────────────┬──────────────────────┘
@@ -69,7 +69,7 @@ SPECTRAVEIN is a clean three-tier system with strict separation of concerns:
 │    → Load asteroid_labeled.csv    │   │    → Real close-approach data      │
 │    → Compute physics & economics  │   │    → All passes 2026–2100          │
 │    → Return List[AsteroidTarget]  │   │    → Per-asteroid (triggered by    │
-│                                   │   │      selecting a target in /analytics)│
+│                                   │   │  selecting a target in /analytics) │
 │  GET /  (health check)            │   │                                    │
 │                                   │   │  Proxied through Next.js rewrite   │
 │  ML:    K-Means(k=3) on albedo    │   │  to bypass browser CORS policy     │
