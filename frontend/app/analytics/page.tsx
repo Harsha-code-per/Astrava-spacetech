@@ -180,7 +180,7 @@ function AnalyticsContent() {
     setCadLoading(true);
 
     fetch(
-      `https://ssd-api.jpl.nasa.gov/cad.api?des=${designation}&date-min=now&date-max=2100-01-01&dist-max=10`,
+      `/api/nasa-cad?des=${designation}&date-min=now&date-max=2100-01-01&dist-max=10`,
       { signal: controller.signal },
     )
       .then((res) => {
