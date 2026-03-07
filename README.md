@@ -8,7 +8,7 @@
 <!-- Drop UI screenshots here before submission -->
 | Landing Page | Target Finder | Mission Analytics |
 |:---:|:---:|:---:|
-| ![Landing](./docs/screenshot-landing.png) | ![Dashboard](./docs/screenshot-dashboard.png) | ![Analytics](./docs/screenshot-analytics.png) |
+| ![Landing](frontend/public/home.png) | ![Dashboard](frontend/public/dashboard.png) | ![Analytics](frontend/public/analytics.png) |
 
 ---
 
